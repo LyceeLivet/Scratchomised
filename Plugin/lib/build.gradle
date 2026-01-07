@@ -1,6 +1,6 @@
 plugins {
     id "java-library"
-    id "com.gradleup.shadow" version '9.0.0-beta8'
+    id "com.gradleup.shadow" version "8.3.3"
 }
 
 repositories {
@@ -23,16 +23,25 @@ dependencies {
 
 // Java 8 is the Java version SweetHome3D uses
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(8)
-    }
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-// Minimize the resulting JAR, a bit
-tasks.named('shadowJar', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
-  minimize {
-    // But we need to say that this should be excluded since it isn't imported directly
-    exclude(dependency("org.eclipse.jetty.websocket:websocket-server:.*"))
-    exclude(dependency("org.slf4j:slf4j-nop:.*"))
-  }
+// Définir le nom du JAR final
+tasks.named('shadowJar') {
+  archiveBaseName.set('Scratchomised')
+  archiveExtension.set('sh3p')
+  archiveClassifier.set('')
+  
+  // Ne pas minimiser pour s'assurer que toutes les ressources sont incluses
+  // minimize {
+  //   // But we need to say that this should be excluded since it isn't imported directly
+  //   exclude(dependency("org.eclipse.jetty.websocket:websocket-server:.*"))
+  //   exclude(dependency("org.slf4j:slf4j-nop:.*"))
+  // }
+}
+
+// Désactiver la tâche jar standard pour ne générer que le shadowJar avec l'extension .sh3p
+tasks.named('jar') {
+  enabled = false
 }

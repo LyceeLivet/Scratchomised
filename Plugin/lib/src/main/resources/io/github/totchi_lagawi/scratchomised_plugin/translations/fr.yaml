@@ -15,5 +15,27 @@ errors:
     socket_binding: "Erreur lors de la création du socket"
     null_server: "Le serveur n'a pas pu être créé"
 
-# The logging prefix
+# The logging prefix
 log_prefix: "[Scratchomised] "
+
+# Debug window
+debug_window:
+  title: "Scratchomised - Debug Serveur"
+  status: "État"
+  status_running: "Serveur démarré"
+  status_stopped: "Serveur arrêté"
+  clear: "Effacer"
+
+# Export
+export:
+  no_objects: "Aucun objet dans le plan. Veuillez ajouter des objets avant d'exporter."
+  error: "Erreur lors de l'export"
+  error_title: "Erreur d'export"
+  success: "Export réussi !"
+  success_title: "Export terminé"
+  dialog_title: "Type d'export"
+  dialog_message: "Choisissez le type d'export :"
+  option_block_per_object: "Un bloc par objet"
+  option_list_of_objects: "Un bloc avec la liste des objets"
+  cancel: "Annuler"
+  validate: "Valider"

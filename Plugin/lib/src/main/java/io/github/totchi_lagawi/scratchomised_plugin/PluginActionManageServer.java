@@ -3,22 +3,30 @@ package io.github.totchi_lagawi.scratchomised_plugin;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.util.function.Consumer;
 
 import javax.swing.JOptionPane;
 
 import com.eteks.sweethome3d.model.Home;
 import com.eteks.sweethome3d.plugin.PluginAction;
+import com.eteks.sweethome3d.swing.HomeComponent3D;
+import com.eteks.sweethome3d.viewcontroller.HomeController;
 
 public class PluginActionManageServer extends PluginAction implements PropertyChangeListener, UncaughtExceptionHandler {
     private LanguageManager _languageManager;
     private Home _home;
+    private HomeController _homeController;
     private int _port = 55125;
     private PluginServer _server;
     private Thread _serverThread;
+    private PluginServerDebugWindow _debugWindow;
+    private PluginClickListener _clickListener;
+    private Consumer<String> _clickMessageCallback;
 
-    public PluginActionManageServer(LanguageManager languageManager, Home home) {
+    public PluginActionManageServer(LanguageManager languageManager, Home home, HomeController homeController) {
         this._languageManager = languageManager;
         this._home = home;
+        this._homeController = homeController;
         // When instanciated, define the menu, name and enabled state of this action
         putPropertyValue(Property.NAME, this._languageManager.getString("menus.server.start"));
         putPropertyValue(Property.MENU, this._languageManager.getString("name"));
@@ -44,8 +52,15 @@ public class PluginActionManageServer extends PluginAction implements PropertyCh
             return;
         }
 
+        // Créer la fenêtre de debug
+        if (this._debugWindow == null) {
+            this._debugWindow = new PluginServerDebugWindow(this._languageManager);
+            this._debugWindow.setServerStatus(false, this._port);
+        }
+        this._debugWindow.setVisible(true);
+
         if (this._server == null) {
-            this._server = new PluginServer(this._port, this._languageManager, this._home);
+            this._server = new PluginServer(this._port, this._languageManager, this._home, this._debugWindow, this._homeController);
         }
 
         if (this._serverThread == null) {
@@ -53,6 +68,15 @@ public class PluginActionManageServer extends PluginAction implements PropertyCh
         }
 
         this._serverThread.start();
+        
+        // Ajouter le listener de clic sur le composant 3D (après un court délai pour s'assurer que le serveur est démarré)
+        // Le callback sera défini par PluginServerWebSocketServlet
+        try {
+            Thread.sleep(100); // Attendre un peu que le serveur démarre
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        this.addClickListener();
 
         // And we say that the server is started
         // We have to say that it is started before actually starting it as of a
@@ -81,12 +105,68 @@ public class PluginActionManageServer extends PluginAction implements PropertyCh
         this._server = null;
         this._serverThread = null;
 
+        // Retirer le listener de clic
+        this.removeClickListener();
+
+        // Masquer la fenêtre de debug (mais la garder pour le prochain démarrage)
+        if (this._debugWindow != null) {
+            this._debugWindow.setVisible(false);
+        }
+
         // Now we say that the server is stopped
         putPropertyValue(Property.NAME, this._languageManager.getString("menus.server.start"));
     }
+    
+    /**
+     * Ajoute le listener de clic sur le composant 3D
+     */
+    private void addClickListener() {
+        try {
+            if (this._homeController != null) {
+                HomeComponent3D comp3D = (HomeComponent3D) this._homeController.getHomeController3D().getView();
+                if (comp3D != null && this._clickListener == null) {
+                    // Créer le callback qui utilise ClickMessageManager pour envoyer les messages
+                    this._clickMessageCallback = (objectId) -> {
+                        ClickMessageManager.getInstance().sendClickMessage(objectId);
+                    };
+                    
+                    // Créer et ajouter le listener
+                    this._clickListener = new PluginClickListener(this._clickMessageCallback, this._debugWindow);
+                    comp3D.addMouseListener(this._clickListener);
+                    
+                    if (this._debugWindow != null) {
+                        this._debugWindow.addLog("Click listener added to 3D view", PluginServerDebugWindow.LogType.INFO);
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            if (this._debugWindow != null) {
+                this._debugWindow.addLog("Error adding click listener: " + ex.getMessage(), PluginServerDebugWindow.LogType.ERROR);
+            }
+            ex.printStackTrace();
+        }
+    }
+    
+    /**
+     * Retire le listener de clic du composant 3D
+     */
+    private void removeClickListener() {
+        try {
+            if (this._homeController != null && this._clickListener != null) {
+                HomeComponent3D comp3D = (HomeComponent3D) this._homeController.getHomeController3D().getView();
+                if (comp3D != null) {
+                    comp3D.removeMouseListener(this._clickListener);
+                    this._clickListener = null;
+                }
+            }
+        } catch (Exception ex) {
+            // Ignorer les erreurs silencieusement
+            ex.printStackTrace();
+        }
+    }
 
     public boolean isServerRunning() {
-        if (this._server == null | this._serverThread == null) {
+        if (this._server == null || this._serverThread == null) {
             return false;
         } else {
             return this._server.isRunning();
@@ -95,7 +175,7 @@ public class PluginActionManageServer extends PluginAction implements PropertyCh
 
     // Normally called in case of a language change
     public void propertyChange(PropertyChangeEvent event) {
-        if (event.getPropertyName() == "LANGUAGE") {
+        if ("LANGUAGE".equals(event.getPropertyName())) {
             putPropertyValue(Property.MENU, this._languageManager.getString("name"));
 
             if (this.isServerRunning()) {

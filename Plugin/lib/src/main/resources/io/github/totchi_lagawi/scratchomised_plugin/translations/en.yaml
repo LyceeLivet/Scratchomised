@@ -15,5 +15,27 @@ errors:
     socket_binding: "Error while biding the socket"
     null_server: "The server couldn't be created"
 
-# The logging prefix
+# The logging prefix
 log_prefix: "[Scratchomised] "
+
+# Debug window
+debug_window:
+  title: "Scratchomised - Server Debug"
+  status: "Status"
+  status_running: "Server running"
+  status_stopped: "Server stopped"
+  clear: "Clear"
+
+# Export
+export:
+  no_objects: "No objects in the plan. Please add objects before exporting."
+  error: "Error during export"
+  error_title: "Export Error"
+  success: "Export successful!"
+  success_title: "Export Complete"
+  dialog_title: "Export Type"
+  dialog_message: "Choose the export type:"
+  option_block_per_object: "One block per object"
+  option_list_of_objects: "One block with the list of objects"
+  cancel: "Cancel"
+  validate: "Validate"

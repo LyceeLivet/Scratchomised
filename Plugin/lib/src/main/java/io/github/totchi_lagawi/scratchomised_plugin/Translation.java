@@ -11,6 +11,7 @@ public class Translation {
     public String log_prefix;
     public Menus menus;
     public Errors errors;
+    public DebugWindow debug_window;
 
     public static class Menus {
         public MenuServer server;
@@ -30,6 +31,14 @@ public class Translation {
             public String socket_binding;
             public String null_server;
         }
+    }
+
+    public static class DebugWindow {
+        public String title;
+        public String status;
+        public String status_running;
+        public String status_stopped;
+        public String clear;
     }
 
     /**
